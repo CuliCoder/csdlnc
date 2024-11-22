@@ -2,16 +2,13 @@ import { Button, Drawer, Sidebar, TextInput } from "flowbite-react";
 import { useState } from "react";
 import {
   HiChartPie,
-  HiClipboard,
-  HiCollection,
-  HiInformationCircle,
   HiLogin,
   HiPencil,
   HiSearch,
-  HiShoppingBag,
-  HiUsers,
 } from "react-icons/hi";
-
+import { FaQuestion } from "react-icons/fa";
+import { MdQuestionAnswer } from "react-icons/md";
+import { GrResources } from "react-icons/gr";
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -53,20 +50,17 @@ export default function Navigation() {
                     <Sidebar.Item href="/" icon={HiChartPie}>
                       Dashboard
                     </Sidebar.Item>
-                    <Sidebar.Item href="/question" icon={HiShoppingBag}>
+                    <Sidebar.Item href="/question" icon={FaQuestion}>
                       Question
                     </Sidebar.Item>
-                    <Sidebar.Item href="/user" icon={HiUsers}>
-                      Users list
+                    <Sidebar.Item href="/answer" icon={MdQuestionAnswer}>
+                      Answer
+                    </Sidebar.Item>
+                    <Sidebar.Item href="/source" icon={GrResources}>
+                      Source
                     </Sidebar.Item>
                     <Sidebar.Item href="/authentication/sign-in" icon={HiLogin}>
                       Sign in
-                    </Sidebar.Item>
-                    <Sidebar.Item
-                      href="/authentication/sign-up"
-                      icon={HiPencil}
-                    >
-                      Sign up
                     </Sidebar.Item>
                   </Sidebar.ItemGroup>
                 </Sidebar.Items>

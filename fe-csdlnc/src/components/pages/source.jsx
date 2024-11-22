@@ -3,13 +3,13 @@ import { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import axios from "../../config/configAxios";
-const Question = () => {
-  const [questions, setQuestions] = useState([]);
+const Source = () => {
+  const [sources, setSources] = useState([]);
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const res = await axios.get("/api/question");
-        setQuestions(res.data);
+        const res = await axios.get("/api/source");
+        setSources(res.data);
       } catch (err) {
         console.log(err);
       }
@@ -19,15 +19,14 @@ const Question = () => {
   return (
     <div className="flex flex-col">
       <div className="flex text-2xl font-bold mt-4 mb-10 mx-auto !important">
-        Danh sách các nội dung câu hỏi
+        Danh sách các nguồn câu hỏi
       </div>
       <div className="w-full pl-8 flex justify-between ">
         <Button className="">Thêm</Button>
         <div className="flex">
           <Select id="option" required className="">
             <option value={"id"}>ID</option>
-            <option value={"question"}>Question</option>
-            <option value={"sourceId"}>SourceId</option>
+            <option value={"link"}>Link</option>
             <option value={"status"}>Status</option>
           </Select>
           <form className="w-full max-w-md mx-auto relative ">
@@ -77,32 +76,34 @@ const Question = () => {
         <Table>
           <Table.Head>
             <Table.HeadCell>ID</Table.HeadCell>
-            <Table.HeadCell>Question</Table.HeadCell>
-            <Table.HeadCell>sourceId</Table.HeadCell>
-            <Table.HeadCell>UserId</Table.HeadCell>
+            <Table.HeadCell>Link</Table.HeadCell>
+            <Table.HeadCell>created_at</Table.HeadCell>
             <Table.HeadCell>Updated_at</Table.HeadCell>
             <Table.HeadCell>status</Table.HeadCell>
             <Table.HeadCell></Table.HeadCell>
           </Table.Head>
           <Table.Body className="divide-y">
-            {questions?.map((question) => (
+            {sources?.map((source) => (
               <Table.Row
-                key={question.id}
+                key={source.id}
                 className="bg-white dark:bor{}er-gray-700 dark:bg-gray-800"
               >
-                <Table.Cell>{question.id}</Table.Cell>
+                <Table.Cell>{source.id}</Table.Cell>
                 <Table.Cell className=" font-medium text-gray-900 dark:text-white ">
-                  {question.question}
+                  {source.link}
                 </Table.Cell>
-                <Table.Cell>{question.id_source}</Table.Cell>
-                <Table.Cell>{question.id_user}</Table.Cell>
                 <Table.Cell>
-                  {new Date(question.updated_at).toLocaleString("vi-VN", {
+                  {new Date(source.created_at).toLocaleString("vi-VN", {
                     timeZone: "Asia/Ho_Chi_Minh",
                   })}
                 </Table.Cell>
                 <Table.Cell>
-                  {question.status == 1 ? "Active" : "Inactive"}
+                  {new Date(source.updated_at).toLocaleString("vi-VN", {
+                    timeZone: "Asia/Ho_Chi_Minh",
+                  })}
+                </Table.Cell>
+                <Table.Cell>
+                  {source.status == 1 ? "Active" : "Inactive"}
                 </Table.Cell>
                 <Table.Cell className="flex">
                   <span className="cursor-pointer">
@@ -120,4 +121,4 @@ const Question = () => {
     </div>
   );
 };
-export default Question;
+export default Source;

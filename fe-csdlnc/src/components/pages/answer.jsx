@@ -1,34 +1,35 @@
-import { Table, Button, Label, Select } from "flowbite-react";
+import { Table, Button, Select } from "flowbite-react";
 import { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import axios from "../../config/configAxios";
+import { TiTick } from "react-icons/ti";
 const Question = () => {
-  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchAnswers = async () => {
       try {
-        const res = await axios.get("/api/question");
-        setQuestions(res.data);
+        const res = await axios.get("/api/answer");
+        setAnswers(res.data);
       } catch (err) {
         console.log(err);
       }
     };
-    fetchQuestions();
+    fetchAnswers();
   }, []);
   return (
-    <div className="flex flex-col">
-      <div className="flex text-2xl font-bold mt-4 mb-10 mx-auto !important">
-        Danh sách các nội dung câu hỏi
+    <div className="flex flex-col items-center">
+      <div className="flex text-2xl font-bold mt-4 mb-10 !important">
+        Danh sách các câu trả lời
       </div>
       <div className="w-full pl-8 flex justify-between ">
         <Button className="">Thêm</Button>
         <div className="flex">
           <Select id="option" required className="">
             <option value={"id"}>ID</option>
-            <option value={"question"}>Question</option>
-            <option value={"sourceId"}>SourceId</option>
-            <option value={"status"}>Status</option>
+            <option value={"answer"}>Answer</option>
+            <option value={"questionId"}>QuestionId</option>
+            <option value={"correct"}>Correct</option>
           </Select>
           <form className="w-full max-w-md mx-auto relative ">
             <label
@@ -72,37 +73,28 @@ const Question = () => {
           </form>
         </div>
       </div>
-
       <div className="overflow-x-auto w-full mt-4">
         <Table>
           <Table.Head>
             <Table.HeadCell>ID</Table.HeadCell>
-            <Table.HeadCell>Question</Table.HeadCell>
-            <Table.HeadCell>sourceId</Table.HeadCell>
-            <Table.HeadCell>UserId</Table.HeadCell>
-            <Table.HeadCell>Updated_at</Table.HeadCell>
-            <Table.HeadCell>status</Table.HeadCell>
+            <Table.HeadCell>Answer</Table.HeadCell>
+            <Table.HeadCell>QuestionId</Table.HeadCell>
+            <Table.HeadCell>Correct</Table.HeadCell>
             <Table.HeadCell></Table.HeadCell>
           </Table.Head>
           <Table.Body className="divide-y">
-            {questions?.map((question) => (
+            {answers?.map((answer) => (
               <Table.Row
-                key={question.id}
+                key={answer.id}
                 className="bg-white dark:bor{}er-gray-700 dark:bg-gray-800"
               >
-                <Table.Cell>{question.id}</Table.Cell>
+                <Table.Cell>{answer.id}</Table.Cell>
                 <Table.Cell className=" font-medium text-gray-900 dark:text-white ">
-                  {question.question}
+                  {answer.answer}
                 </Table.Cell>
-                <Table.Cell>{question.id_source}</Table.Cell>
-                <Table.Cell>{question.id_user}</Table.Cell>
+                <Table.Cell>{answer.id_question}</Table.Cell>
                 <Table.Cell>
-                  {new Date(question.updated_at).toLocaleString("vi-VN", {
-                    timeZone: "Asia/Ho_Chi_Minh",
-                  })}
-                </Table.Cell>
-                <Table.Cell>
-                  {question.status == 1 ? "Active" : "Inactive"}
+                  {answer.correct == "0" ? "" : <TiTick color="green" size={30}/>}
                 </Table.Cell>
                 <Table.Cell className="flex">
                   <span className="cursor-pointer">
