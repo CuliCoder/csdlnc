@@ -59,3 +59,18 @@ export const getQuestionByUser = (userId) =>
       reject(null);
     }
   });
+export const createQuestion = (question) =>
+  new Promise(async (resolve, reject) => {
+    try {
+      const result = await connection.query("call createQuestion(?, ?, ?, ?)", [
+        question.source,
+        question.content,
+        question.status,
+        question.userId,
+      ]);
+      resolve(result[0][0]);
+    } catch (err) {
+      console.log(err);
+      reject(null);
+    }
+  });

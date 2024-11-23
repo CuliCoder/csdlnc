@@ -57,8 +57,7 @@ const Question = () => {
       <div className="flex text-2xl font-bold mt-4 mb-10 !important">
         Danh sách các câu trả lời
       </div>
-      <div className="w-full pl-8 flex justify-between ">
-        <Button className="">Thêm</Button>
+      <div className="w-full flex justify-end space-x-4 pr-4  ">
         <div className="flex">
           <Select
             id="option"
@@ -114,6 +113,7 @@ const Question = () => {
             </div>
           </div>
         </div>
+        <Button className="">Thêm</Button>
       </div>
       <div className="relative overflow-x-auto w-full mt-4 h-screen">
         {loading && (
@@ -166,4 +166,6 @@ const ListAnswer = React.memo(({ answers }) => {
     </Table.Row>
   ));
 });
+
+
 export default Question;

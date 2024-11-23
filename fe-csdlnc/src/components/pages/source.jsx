@@ -56,9 +56,8 @@ const Source = () => {
       <div className="flex text-2xl font-bold mt-4 mb-10 mx-auto !important">
         Danh sách các nguồn câu hỏi
       </div>
-      <div className="w-full pl-8 flex justify-between ">
-        <Button className="">Thêm</Button>
-        <div className="flex">
+      <div className="w-full flex justify-end space-x-4 pr-4">
+        <div className="flex ">
           <Select
             id="option"
             required
@@ -69,7 +68,7 @@ const Source = () => {
             <option value={"link"}>Link</option>
             <option value={"status"}>Status</option>
           </Select>
-          <form className="w-full max-w-md mx-auto relative ">
+          <div className="w-full max-w-md mx-auto relative ">
             <label
               htmlFor="default-search"
               className="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white"
@@ -104,8 +103,9 @@ const Source = () => {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-          </form>
+          </div>
         </div>
+        <Button className="">Thêm</Button>
       </div>
 
       <div className="relative overflow-x-auto w-full mt-4 h-screen">

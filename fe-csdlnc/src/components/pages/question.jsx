@@ -1,5 +1,13 @@
-import { Table, Button, Select } from "flowbite-react";
-import React, { useEffect, useState, useRef } from "react";
+import {
+  Table,
+  Button,
+  Select,
+  Label,
+  TextInput,
+  Modal,
+  Checkbox,
+} from "flowbite-react";
+import React, { useEffect, useState, useRef, memo, useCallback } from "react";
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import axios from "../../config/configAxios";
@@ -10,6 +18,7 @@ const Question = () => {
   const [search, setSearch] = useState("");
   const countTimeFind = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
   const fetchQuestions = async () => {
     setLoading(true);
     try {
@@ -50,13 +59,16 @@ const Question = () => {
     }
     setLoading(false);
   };
+  const onCloseModal = useCallback(() => {
+    setOpenModal(false);
+  }, []);
   return (
     <div className="flex flex-col">
+      <ModalAddQuestion openModal={openModal} onCloseModal={onCloseModal} />
       <div className="flex text-2xl font-bold mt-4 mb-10 mx-auto !important">
         Danh sách các nội dung câu hỏi
       </div>
-      <div className="w-full pl-8 flex justify-between ">
-        <Button className="">Thêm</Button>
+      <div className="w-full flex justify-end space-x-4 pr-4 ">
         <div className="flex">
           <Select
             id="option"
@@ -107,6 +119,7 @@ const Question = () => {
             </div>
           </div>
         </div>
+        <Button onClick={() => setOpenModal(true)}>Thêm</Button>
       </div>
 
       <div className="relative overflow-x-auto w-full mt-4 h-screen">
@@ -165,5 +178,43 @@ const ListQuestion = React.memo(({ questions }) => {
       </Table.Cell>
     </Table.Row>
   ));
+});
+const ModalAddQuestion = memo(({ openModal, onCloseModal }) => {
+  const [question, setQuestion] = useState("");
+  const handleAddQuestion = async () => {
+    try {
+      await axios.post("/api/question", { question });
+      onCloseModal();
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  return (
+    <Modal show={openModal} size="md" onClose={onCloseModal} popup>
+      <Modal.Header />
+      <Modal.Body>
+        <div className="space-y-6">
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">
+            Thêm nội dung câu hỏi
+          </h3>
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="question" value="Nội dung câu hỏi" />
+            </div>
+            <TextInput
+              id="question"
+              placeholder="Question ..."
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              required
+            />
+          </div>
+          <div className="w-full flex justify-end mt-4">
+            <Button>Thêm</Button>
+          </div>
+        </div>
+      </Modal.Body>
+    </Modal>
+  );
 });
 export default Question;
