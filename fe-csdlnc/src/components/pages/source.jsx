@@ -1,21 +1,56 @@
-import { Table, Button, Label, Select } from "flowbite-react";
-import { useEffect, useState } from "react";
+import { Table, Button, Select } from "flowbite-react";
+import { useEffect, useState, memo, useRef } from "react";
+import { Spinner } from "flowbite-react";
+
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import axios from "../../config/configAxios";
 const Source = () => {
   const [sources, setSources] = useState([]);
+  const [option, setOption] = useState("id");
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const countTimeFind = useRef(null);
+  const fetchQuestions = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("/api/source");
+      setSources(res.data);
+    } catch (err) {
+      console.log(err);
+      setSources([]);
+    }
+    setLoading(false);
+  };
   useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const res = await axios.get("/api/source");
-        setSources(res.data);
-      } catch (err) {
-        console.log(err);
-      }
-    };
     fetchQuestions();
   }, []);
+  useEffect(() => {
+    if (countTimeFind.current) {
+      clearTimeout(countTimeFind.current);
+    }
+    countTimeFind.current = setTimeout(() => {
+      if (search === "") {
+        fetchQuestions();
+        return;
+      }
+      handleFind();
+    }, 500);
+    return () => {
+      clearTimeout(countTimeFind.current);
+    };
+  }, [search, option]);
+  const handleFind = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`/api/source/${option}/${search}`);
+      setSources(res.data);
+    } catch (err) {
+      console.log(err);
+      setSources([]);
+    }
+    setLoading(false);
+  };
   return (
     <div className="flex flex-col">
       <div className="flex text-2xl font-bold mt-4 mb-10 mx-auto !important">
@@ -24,7 +59,12 @@ const Source = () => {
       <div className="w-full pl-8 flex justify-between ">
         <Button className="">Thêm</Button>
         <div className="flex">
-          <Select id="option" required className="">
+          <Select
+            id="option"
+            required
+            onChange={(e) => setOption(e.target.value)}
+            value={option}
+          >
             <option value={"id"}>ID</option>
             <option value={"link"}>Link</option>
             <option value={"status"}>Status</option>
@@ -60,19 +100,24 @@ const Source = () => {
                 className="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500"
                 placeholder="Search ..."
                 required
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
-              <button
-                type="submit"
-                className="absolute top-0 end-0 p-2.5 text-sm font-medium h-full text-white bg-blue-700 rounded-e-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-              >
-                Search
-              </button>
             </div>
           </form>
         </div>
       </div>
 
-      <div className="overflow-x-auto w-full mt-4">
+      <div className="relative overflow-x-auto w-full mt-4 h-screen">
+        {loading && (
+          <div className="absolute inset-0 flex justify-center bg-opacity-50 bg-gray-200 z-10 pt-4">
+            <Spinner
+              aria-label="Center-aligned spinner example"
+              className="mt-4"
+              size="xl"
+            />
+          </div>
+        )}
         <Table>
           <Table.Head>
             <Table.HeadCell>ID</Table.HeadCell>
@@ -83,42 +128,43 @@ const Source = () => {
             <Table.HeadCell></Table.HeadCell>
           </Table.Head>
           <Table.Body className="divide-y">
-            {sources?.map((source) => (
-              <Table.Row
-                key={source.id}
-                className="bg-white dark:bor{}er-gray-700 dark:bg-gray-800"
-              >
-                <Table.Cell>{source.id}</Table.Cell>
-                <Table.Cell className=" font-medium text-gray-900 dark:text-white ">
-                  {source.link}
-                </Table.Cell>
-                <Table.Cell>
-                  {new Date(source.created_at).toLocaleString("vi-VN", {
-                    timeZone: "Asia/Ho_Chi_Minh",
-                  })}
-                </Table.Cell>
-                <Table.Cell>
-                  {new Date(source.updated_at).toLocaleString("vi-VN", {
-                    timeZone: "Asia/Ho_Chi_Minh",
-                  })}
-                </Table.Cell>
-                <Table.Cell>
-                  {source.status == 1 ? "Active" : "Inactive"}
-                </Table.Cell>
-                <Table.Cell className="flex">
-                  <span className="cursor-pointer">
-                    <FaEdit color="red" />
-                  </span>
-                  <span className="cursor-pointer">
-                    <MdDelete color="red" />
-                  </span>
-                </Table.Cell>
-              </Table.Row>
-            ))}
+            <ListSource sources={sources} />
           </Table.Body>
         </Table>
       </div>
     </div>
   );
 };
+const ListSource = memo(({ sources }) => {
+  return sources?.map((source) => (
+    <Table.Row
+      key={source.id}
+      className="bg-white dark:bor{}er-gray-700 dark:bg-gray-800"
+    >
+      <Table.Cell>{source.id}</Table.Cell>
+      <Table.Cell className=" font-medium text-gray-900 dark:text-white ">
+        {source.link}
+      </Table.Cell>
+      <Table.Cell>
+        {new Date(source.created_at).toLocaleString("vi-VN", {
+          timeZone: "Asia/Ho_Chi_Minh",
+        })}
+      </Table.Cell>
+      <Table.Cell>
+        {new Date(source.updated_at).toLocaleString("vi-VN", {
+          timeZone: "Asia/Ho_Chi_Minh",
+        })}
+      </Table.Cell>
+      <Table.Cell>{source.status == 1 ? "Active" : "Inactive"}</Table.Cell>
+      <Table.Cell className="flex">
+        <span className="cursor-pointer">
+          <FaEdit color="red" />
+        </span>
+        <span className="cursor-pointer">
+          <MdDelete color="red" />
+        </span>
+      </Table.Cell>
+    </Table.Row>
+  ));
+});
 export default Source;

@@ -4,12 +4,15 @@ import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import axios from "../../config/configAxios";
 import { TiTick } from "react-icons/ti";
+import { Spinner } from "flowbite-react";
 const Question = () => {
   const [answers, setAnswers] = useState([]);
   const [search, setSearch] = useState("");
   const [option, setOption] = useState("id");
   const countTimeFind = useRef(null);
+  const [loading, setLoading] = useState(false);
   const fetchAnswers = async () => {
+    setLoading(true);
     try {
       const res = await axios.get("/api/answer");
       setAnswers(res.data);
@@ -17,6 +20,7 @@ const Question = () => {
       console.log(err);
       setAnswers(err.response.data);
     }
+    setLoading(false);
   };
   useEffect(() => {
     fetchAnswers();
@@ -37,6 +41,7 @@ const Question = () => {
     };
   }, [search, option]);
   const handleFind = async () => {
+    setLoading(true);
     try {
       const res = await axios.get(`/api/answer/${option}/${search}`);
       setAnswers(res.data);
@@ -44,6 +49,7 @@ const Question = () => {
       console.log(err);
       setAnswers(err.response.data);
     }
+    setLoading(false);
   };
 
   return (
@@ -65,7 +71,7 @@ const Question = () => {
             <option value={"questionId"}>QuestionId</option>
             <option value={"correct"}>Correct</option>
           </Select>
-          <form className="w-full max-w-md mx-auto relative ">
+          <div className="w-full max-w-md mx-auto relative ">
             <label
               htmlFor="default-search"
               className="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white"
@@ -106,10 +112,19 @@ const Question = () => {
                 Search
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
-      <div className="overflow-x-auto w-full mt-4">
+      <div className="relative overflow-x-auto w-full mt-4 h-screen">
+        {loading && (
+          <div className="absolute inset-0 flex justify-center bg-opacity-50 bg-gray-200 z-10 pt-4">
+            <Spinner
+              aria-label="Center-aligned spinner example"
+              className="mt-4"
+              size="xl"
+            />
+          </div>
+        )}
         <Table>
           <Table.Head>
             <Table.HeadCell>ID</Table.HeadCell>
