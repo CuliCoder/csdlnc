@@ -1,22 +1,51 @@
 import { Table, Button, Select } from "flowbite-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import axios from "../../config/configAxios";
 import { TiTick } from "react-icons/ti";
 const Question = () => {
   const [answers, setAnswers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [option, setOption] = useState("id");
+  const countTimeFind = useRef(null);
+  const fetchAnswers = async () => {
+    try {
+      const res = await axios.get("/api/answer");
+      setAnswers(res.data);
+    } catch (err) {
+      console.log(err);
+      setAnswers(err.response.data);
+    }
+  };
   useEffect(() => {
-    const fetchAnswers = async () => {
-      try {
-        const res = await axios.get("/api/answer");
-        setAnswers(res.data);
-      } catch (err) {
-        console.log(err);
-      }
-    };
     fetchAnswers();
   }, []);
+  useEffect(() => {
+    if (countTimeFind.current) {
+      clearTimeout(countTimeFind.current);
+    }
+    countTimeFind.current = setTimeout(() => {
+      if (search === "") {
+        fetchAnswers();
+        return;
+      }
+      handleFind();
+    }, 500);
+    return () => {
+      clearTimeout(countTimeFind.current);
+    };
+  }, [search, option]);
+  const handleFind = async () => {
+    try {
+      const res = await axios.get(`/api/answer/${option}/${search}`);
+      setAnswers(res.data);
+    } catch (err) {
+      console.log(err);
+      setAnswers(err.response.data);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center">
       <div className="flex text-2xl font-bold mt-4 mb-10 !important">
@@ -25,9 +54,14 @@ const Question = () => {
       <div className="w-full pl-8 flex justify-between ">
         <Button className="">Thêm</Button>
         <div className="flex">
-          <Select id="option" required className="">
+          <Select
+            id="option"
+            required
+            value={option}
+            onChange={(e) => setOption(e.target.value)}
+          >
             <option value={"id"}>ID</option>
-            <option value={"answer"}>Answer</option>
+            <option value={"content"}>Answer</option>
             <option value={"questionId"}>QuestionId</option>
             <option value={"correct"}>Correct</option>
           </Select>
@@ -62,6 +96,8 @@ const Question = () => {
                 className="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-s-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500"
                 placeholder="Search ..."
                 required
+                onChange={(e) => setSearch(e.target.value)}
+                value={search}
               />
               <button
                 type="submit"
@@ -83,33 +119,36 @@ const Question = () => {
             <Table.HeadCell></Table.HeadCell>
           </Table.Head>
           <Table.Body className="divide-y">
-            {answers?.map((answer) => (
-              <Table.Row
-                key={answer.id}
-                className="bg-white dark:bor{}er-gray-700 dark:bg-gray-800"
-              >
-                <Table.Cell>{answer.id}</Table.Cell>
-                <Table.Cell className=" font-medium text-gray-900 dark:text-white ">
-                  {answer.answer}
-                </Table.Cell>
-                <Table.Cell>{answer.id_question}</Table.Cell>
-                <Table.Cell>
-                  {answer.correct == "0" ? "" : <TiTick color="green" size={30}/>}
-                </Table.Cell>
-                <Table.Cell className="flex">
-                  <span className="cursor-pointer">
-                    <FaEdit color="red" />
-                  </span>
-                  <span className="cursor-pointer">
-                    <MdDelete color="red" />
-                  </span>
-                </Table.Cell>
-              </Table.Row>
-            ))}
+            <ListAnswer answers={answers} />
           </Table.Body>
         </Table>
       </div>
     </div>
   );
 };
+const ListAnswer = React.memo(({ answers }) => {
+  return answers?.map((answer) => (
+    <Table.Row
+      key={answer.id}
+      className="bg-white dark:bor{}er-gray-700 dark:bg-gray-800"
+    >
+      <Table.Cell>{answer.id}</Table.Cell>
+      <Table.Cell className=" font-medium text-gray-900 dark:text-white ">
+        {answer.answer}
+      </Table.Cell>
+      <Table.Cell>{answer.id_question}</Table.Cell>
+      <Table.Cell>
+        {answer.correct == "0" ? "" : <TiTick color="green" size={30} />}
+      </Table.Cell>
+      <Table.Cell className="flex">
+        <span className="cursor-pointer">
+          <FaEdit color="red" />
+        </span>
+        <span className="cursor-pointer">
+          <MdDelete color="red" />
+        </span>
+      </Table.Cell>
+    </Table.Row>
+  ));
+});
 export default Question;
