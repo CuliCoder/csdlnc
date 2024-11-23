@@ -1,17 +1,20 @@
-import { Table, Button, Select } from "flowbite-react";
-import React, { useEffect, useState, useRef } from "react";
+import { Table, Button, Select, Modal, Label, TextInput } from "flowbite-react";
+import React, { useEffect, useState, useRef, useCallback, memo } from "react";
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import axios from "../../config/configAxios";
 import { TiTick } from "react-icons/ti";
 import { Spinner } from "flowbite-react";
-const Question = () => {
+import { useMyContext } from "../../context/ContextAPI";
+const Answer = () => {
   const [answers, setAnswers] = useState([]);
   const [search, setSearch] = useState("");
   const [option, setOption] = useState("id");
   const countTimeFind = useRef(null);
   const [loading, setLoading] = useState(false);
-  const fetchAnswers = async () => {
+  const [fisrtLoad, setFirstLoad] = useState(true);
+  const [openModalAdd, setOpenModalAdd] = useState(false);
+  const fetchAnswers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get("/api/answer");
@@ -21,11 +24,13 @@ const Question = () => {
       setAnswers(err.response.data);
     }
     setLoading(false);
-  };
-  useEffect(() => {
-    fetchAnswers();
   }, []);
   useEffect(() => {
+    fetchAnswers();
+    setFirstLoad(false);
+  }, []);
+  useEffect(() => {
+    if (fisrtLoad) return;
     if (countTimeFind.current) {
       clearTimeout(countTimeFind.current);
     }
@@ -51,9 +56,16 @@ const Question = () => {
     }
     setLoading(false);
   };
-
+  const onCloseModalAdd = useCallback(() => {
+    setOpenModalAdd(false);
+  }, []);
   return (
     <div className="flex flex-col items-center">
+      <ModalAddAnswer
+        openModal={openModalAdd}
+        onCloseModal={onCloseModalAdd}
+        fetchAnswers={fetchAnswers}
+      />
       <div className="flex text-2xl font-bold mt-4 mb-10 !important">
         Danh sách các câu trả lời
       </div>
@@ -113,7 +125,7 @@ const Question = () => {
             </div>
           </div>
         </div>
-        <Button className="">Thêm</Button>
+        <Button onClick={() => setOpenModalAdd(true)}>Thêm</Button>
       </div>
       <div className="relative overflow-x-auto w-full mt-4 h-screen">
         {loading && (
@@ -166,6 +178,91 @@ const ListAnswer = React.memo(({ answers }) => {
     </Table.Row>
   ));
 });
-
-
-export default Question;
+const ModalAddAnswer = memo(({ openModal, onCloseModal, fetchAnswers }) => {
+  const [answer, setAnswer] = useState("");
+  const [questionId, setQuestionId] = useState("");
+  const [correct, setCorrect] = useState("1");
+  const { setToast } = useMyContext();
+  const handleAddAnswer = async (e) => {
+    e.preventDefault();
+    try {
+      if (answer === "" || questionId === "") {
+        setToast("error", "Vui lòng nhập đầy đủ thông tin");
+        return;
+      }
+      if (isNaN(questionId)) {
+        setToast("error", "Id câu hỏi phải là số");
+        return;
+      }
+      const res = await axios.post("/api/answer/create", {
+        answer,
+        questionId,
+        correct
+      });
+      if (res.data.error === 0) {
+        fetchAnswers();
+        onCloseModal();
+      }
+      setToast(res.data.error === 0 ? "success" : "error", res.data.message);
+    } catch (err) {
+      console.log(err);
+      setToast("error", err.response.data.message);
+    }
+  };
+  useEffect(() => {
+    if (!openModal) {
+      setAnswer("");
+      setQuestionId("");
+    }
+  }, [openModal]);
+  return (
+    <Modal show={openModal} size="md" onClose={onCloseModal} popup>
+      <Modal.Header />
+      <Modal.Body>
+        <form className="space-y-6" onSubmit={handleAddAnswer}>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">
+            Thêm đáp án
+          </h3>
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="question" value="Nhập đáp án " />
+            </div>
+            <TextInput
+              id="question"
+              placeholder="Question ..."
+              value={answer}
+              onChange={(event) => setAnswer(event.target.value)}
+              required
+            />
+            <div className="mb-2 block">
+              <Label htmlFor="questionId" value="Id câu hỏi" />
+            </div>
+            <TextInput
+              id="questionId"
+              placeholder="Id câu hỏi ..."
+              value={questionId}
+              onChange={(event) => setQuestionId(event.target.value)}
+              required
+            />
+            <div className="mb-2 block">
+              <Label htmlFor="correct" value="Correct" />
+            </div>
+            <Select
+              id="correct"
+              required
+              onChange={(e) => setCorrect(e.target.value)}
+              value={correct}
+            >
+              <option value={"1"}>Correct</option>
+              <option value={"0"}>Wrong</option>
+            </Select>
+          </div>
+          <div className="w-full flex justify-end mt-4">
+            <Button type="submit">Thêm</Button>
+          </div>
+        </form>
+      </Modal.Body>
+    </Modal>
+  );
+});
+export default Answer;

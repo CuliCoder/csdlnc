@@ -3,15 +3,19 @@ import bcrypt from "bcrypt";
 export const login = (username, password) =>
   new Promise(async (resolve, reject) => {
     try {
-      const [result] = await connection.query("call login(?)", [username]);
-      if (result[0].length === 0) {
+      // const [result] = await connection.query("call login(?)", [username]);
+      const [result] = await connection.query(
+        "select id, password from user where username = ?",
+        [username]
+      );
+      if (result.length === 0) {
         resolve({
           error: "1",
           message: "username hoặc password không đúng",
         });
         return;
       }
-      if (!bcrypt.compareSync(password, result[0][0].password)) {
+      if (!bcrypt.compareSync(password, result[0].password)) {
         resolve({
           error: "1",
           message: "username hoặc password không đúng",
@@ -21,7 +25,7 @@ export const login = (username, password) =>
       resolve({
         error: "0",
         message: "Đăng nhập thành công",
-        id: result[0][0].id,
+        id: result[0].id,
       });
     } catch (err) {
       console.log(err);

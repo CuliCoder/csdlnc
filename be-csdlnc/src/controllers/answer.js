@@ -42,7 +42,7 @@ export const getAnswerByContent = async (req, res) => {
   } catch (err) {
     return res.status(500).json(err);
   }
-}
+};
 export const getAnswerByCorrect = async (req, res) => {
   const { correct } = req.params;
   try {
@@ -51,6 +51,24 @@ export const getAnswerByCorrect = async (req, res) => {
     }
     const answer = await answerService.getAnswerByCorrect(correct);
     return res.status(200).json(answer);
+  } catch (err) {
+    return res.status(500).json(err);
+  }
+};
+export const createAnswer = async (req, res) => {
+  const userId = req.data.id;
+  const { questionId, answer, correct } = req.body;
+  try {
+    if (!questionId || !answer || !correct || !userId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    const result = await answerService.createAnswer(
+      answer,
+      questionId,
+      correct,
+      userId
+    );
+    return res.status(200).json(result);
   } catch (err) {
     return res.status(500).json(err);
   }
