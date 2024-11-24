@@ -2,11 +2,11 @@ import { Table, Button, Select } from "flowbite-react";
 import { useEffect, useState, memo, useRef, useCallback } from "react";
 import { Spinner, Datepicker } from "flowbite-react";
 import { FaEdit } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
 import axios from "../../config/configAxios";
 import { Modal, Label, TextInput } from "flowbite-react";
 import { useMyContext } from "../../context/ContextAPI";
 const Source = () => {
+  const { isLogin } = useMyContext();
   const [sources, setSources] = useState([]);
   const [option, setOption] = useState("id");
   const [date, setDate] = useState(null);
@@ -78,11 +78,13 @@ const Source = () => {
         openModal={openModalAdd}
         onCloseModal={onCloseModalAdd}
         fetchSources={fetchSources}
+        setLoading={setLoading}
       />
       <ModalEditSource
         openModal={openModalEdit}
         onCloseModal={onCloseModalEdit}
         fetchSources={fetchSources}
+        setLoading={setLoading}
       />
       <div className="flex text-2xl font-bold mt-4 mb-10 mx-auto !important">
         Danh sách các nguồn câu hỏi
@@ -148,7 +150,7 @@ const Source = () => {
             </div>
           </div>
         </div>
-        <Button onClick={() => setOpenModalAdd(true)}>Thêm</Button>
+        {isLogin && <Button onClick={() => setOpenModalAdd(true)}>Thêm</Button>}
       </div>
 
       <div className="relative overflow-x-auto w-full mt-4 h-screen">
@@ -179,6 +181,7 @@ const Source = () => {
   );
 };
 const ListSource = memo(({ sources, openModalEdit }) => {
+  const { isLogin } = useMyContext();
   return sources?.map((source) => (
     <Table.Row
       key={source.id}
@@ -200,29 +203,32 @@ const ListSource = memo(({ sources, openModalEdit }) => {
       </Table.Cell>
       <Table.Cell>{source.status == 1 ? "Active" : "Inactive"}</Table.Cell>
       <Table.Cell className="flex">
-        <span
-          className="cursor-pointer"
-          onClick={() =>
-            openModalEdit({
-              open: true,
-              data: {
-                id: source.id,
-                source: source.link,
-                status: source.status,
-              },
-            })
-          }
-        >
-          <FaEdit color="red" />
-        </span>
+        {isLogin && (
+          <span
+            className="cursor-pointer"
+            onClick={() =>
+              openModalEdit({
+                open: true,
+                data: {
+                  id: source.id,
+                  source: source.link,
+                  status: source.status,
+                },
+              })
+            }
+          >
+            <FaEdit color="red" />
+          </span>
+        )}
       </Table.Cell>
     </Table.Row>
   ));
 });
-const ModalAddSource = memo(({ openModal, onCloseModal, fetchSources }) => {
+const ModalAddSource = memo(({ openModal, onCloseModal, fetchSources, setLoading }) => {
   const [link, setLink] = useState("");
   const { setToast } = useMyContext();
   const handleAddSource = async (e) => {
+    setLoading(true);
     e.preventDefault();
     try {
       if (!link) {
@@ -240,6 +246,7 @@ const ModalAddSource = memo(({ openModal, onCloseModal, fetchSources }) => {
     } catch (err) {
       setToast("error", err.response.data.message);
     }
+    setLoading(false);
   };
   useEffect(() => {
     if (!openModal) {
@@ -274,7 +281,7 @@ const ModalAddSource = memo(({ openModal, onCloseModal, fetchSources }) => {
     </Modal>
   );
 });
-const ModalEditSource = memo(({ openModal, onCloseModal, fetchSources }) => {
+const ModalEditSource = memo(({ openModal, onCloseModal, fetchSources, setLoading }) => {
   const [source, setSource] = useState(openModal.data.source);
   const [status, setStatus] = useState(openModal.data.status);
   const { setToast } = useMyContext();
@@ -287,7 +294,8 @@ const ModalEditSource = memo(({ openModal, onCloseModal, fetchSources }) => {
     setSource(openModal.data.source);
     setStatus(openModal.data.status);
   }, [openModal]);
-  const handleAddSource = async (e) => {
+  const handleEditSource = async (e) => {
+    setLoading(true);
     e.preventDefault();
     try {
       if (!source) {
@@ -307,12 +315,13 @@ const ModalEditSource = memo(({ openModal, onCloseModal, fetchSources }) => {
     } catch (err) {
       setToast("error", err.response.data.message);
     }
+    setLoading(false);
   };
   return (
     <Modal show={openModal.open} size="md" onClose={onCloseModal} popup>
       <Modal.Header />
       <Modal.Body>
-        <form className="space-y-6" onSubmit={handleAddSource}>
+        <form className="space-y-6" onSubmit={handleEditSource}>
           <h3 className="text-xl font-medium text-gray-900 dark:text-white">
             Sửa câu hỏi
           </h3>

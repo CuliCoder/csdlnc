@@ -6,6 +6,7 @@ import { Spinner } from "flowbite-react";
 import { useMyContext } from "../../context/ContextAPI";
 import { Datepicker } from "flowbite-react";
 const Question = memo(() => {
+  const { isLogin } = useMyContext();
   const [questions, setQuestions] = useState([]);
   const [option, setOption] = useState("id");
   const [search, setSearch] = useState("");
@@ -77,11 +78,13 @@ const Question = memo(() => {
         openModal={openModalAdd}
         onCloseModal={onCloseModalAdd}
         fetchQuestions={fetchQuestions}
+        setLoading={setLoading}
       />
       <ModalEditQuestion
         openModal={openModalEdit}
         onCloseModal={onCloseModalEdit}
         fetchQuestions={fetchQuestions}
+        setLoading={setLoading}
       />
       <div className="flex text-2xl font-bold mt-4 mb-10 mx-auto !important">
         Danh sách các nội dung câu hỏi
@@ -141,7 +144,7 @@ const Question = memo(() => {
             </div>
           </div>
         </div>
-        <Button onClick={() => setOpenModalAdd(true)}>Thêm</Button>
+        {isLogin && <Button onClick={() => setOpenModalAdd(true)}>Thêm</Button>}
       </div>
 
       <div className="relative overflow-x-auto w-full mt-4 h-screen">
@@ -173,6 +176,7 @@ const Question = memo(() => {
   );
 });
 const ListQuestion = React.memo(({ questions, openModal }) => {
+  const { isLogin } = useMyContext();
   return questions?.map((question) => (
     <Table.Row
       key={question.id}
@@ -191,100 +195,106 @@ const ListQuestion = React.memo(({ questions, openModal }) => {
       </Table.Cell>
       <Table.Cell>{question.status == 1 ? "Active" : "Inactive"}</Table.Cell>
       <Table.Cell className="flex">
-        <span
-          className="cursor-pointer"
-          onClick={() =>
-            openModal({
-              open: true,
-              data: {
-                id: question.id,
-                question: question.question,
-                sourceId: question.id_source,
-                status: question.status,
-              },
-            })
-          }
-        >
-          <FaEdit color="red" />
-        </span>
+        {isLogin && (
+          <span
+            className="cursor-pointer"
+            onClick={() =>
+              openModal({
+                open: true,
+                data: {
+                  id: question.id,
+                  question: question.question,
+                  sourceId: question.id_source,
+                  status: question.status,
+                },
+              })
+            }
+          >
+            <FaEdit color="red" />
+          </span>
+        )}
       </Table.Cell>
     </Table.Row>
   ));
 });
-const ModalAddQuestion = memo(({ openModal, onCloseModal, fetchQuestions }) => {
-  const [question, setQuestion] = useState("");
-  const [sourceId, setSourceId] = useState("");
-  const { setToast } = useMyContext();
-  const handleAddQuestion = async (e) => {
-    e.preventDefault();
-    try {
-      if (question === "" || sourceId === "") {
-        setToast("error", "Vui lòng nhập đầy đủ thông tin");
-        return;
+const ModalAddQuestion = memo(
+  ({ openModal, onCloseModal, fetchQuestions, setLoading }) => {
+    const [question, setQuestion] = useState("");
+    const [sourceId, setSourceId] = useState("");
+    const { setToast } = useMyContext();
+    const handleAddQuestion = async (e) => {
+      setLoading(true);
+      e.preventDefault();
+      try {
+        if (question === "" || sourceId === "") {
+          setToast("error", "Vui lòng nhập đầy đủ thông tin");
+          return;
+        }
+        if (isNaN(sourceId)) {
+          setToast("error", "Id nguồn phải là số");
+          return;
+        }
+        const res = await axios.post("/api/question/create", {
+          question,
+          source: sourceId,
+        });
+        if (res.data.error === 0) {
+          fetchQuestions();
+          onCloseModal();
+        }
+        setToast(res.data.error === 0 ? "success" : "error", res.data.message);
+      } catch (err) {
+        setToast("error", err.response.data.message);
       }
-      if (isNaN(sourceId)) {
-        setToast("error", "Id nguồn phải là số");
-        return;
+      setLoading(false);
+    };
+    useEffect(() => {
+      if (!openModal) {
+        setQuestion("");
+        setSourceId("");
       }
-      const res = await axios.post("/api/question/create", {
-        question,
-        source: sourceId,
-      });
-      if (res.data.error === 0) {
-        fetchQuestions();
-        onCloseModal();
-      }
-      setToast(res.data.error === 0 ? "success" : "error", res.data.message);
-    } catch (err) {
-      setToast("error", err.response.data.message);
-    }
-  };
-  useEffect(() => {
-    if (!openModal) {
-      setQuestion("");
-      setSourceId("");
-    }
-  }, [openModal]);
-  return (
-    <Modal show={openModal} size="md" onClose={onCloseModal} popup>
-      <Modal.Header />
-      <Modal.Body>
-        <form className="space-y-6" onSubmit={handleAddQuestion}>
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white">
-            Thêm nội dung câu hỏi
-          </h3>
-          <div>
-            <div className="mb-2 block">
-              <Label htmlFor="question" value="Nội dung câu hỏi" />
+    }, [openModal]);
+    return (
+      <Modal show={openModal} size="md" onClose={onCloseModal} popup>
+        <Modal.Header />
+        <Modal.Body>
+          <form className="space-y-6" onSubmit={handleAddQuestion}>
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white">
+              Thêm nội dung câu hỏi
+            </h3>
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="question" value="Nội dung câu hỏi" />
+              </div>
+              <TextInput
+                id="question"
+                placeholder="Question ..."
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                required
+              />
+              <div className="mb-2 block">
+                <Label htmlFor="sourceID" value="Id nguồn" />
+              </div>
+              <TextInput
+                id="sourceID"
+                placeholder="sourceID ..."
+                value={sourceId}
+                onChange={(event) => setSourceId(event.target.value)}
+                required
+              />
             </div>
-            <TextInput
-              id="question"
-              placeholder="Question ..."
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
-              required
-            />
-            <div className="mb-2 block">
-              <Label htmlFor="sourceID" value="Id nguồn" />
+            <div className="w-full flex justify-end mt-4">
+              <Button type="submit">Thêm</Button>
             </div>
-            <TextInput
-              id="sourceID"
-              placeholder="sourceID ..."
-              value={sourceId}
-              onChange={(event) => setSourceId(event.target.value)}
-              required
-            />
-          </div>
-          <div className="w-full flex justify-end mt-4">
-            <Button type="submit">Thêm</Button>
-          </div>
-        </form>
-      </Modal.Body>
-    </Modal>
-  );
-});
+          </form>
+        </Modal.Body>
+      </Modal>
+    );
+  }
+);
 const ModalEditQuestion = memo(
-  ({ openModal, onCloseModal, fetchQuestions }) => {
+  ({ openModal, onCloseModal, fetchQuestions, setLoading }) => {
     const [question, setQuestion] = useState(openModal.data.question);
     const [sourceId, setSourceId] = useState(openModal.data.sourceId);
     const [status, setStatus] = useState(openModal.data.status);
@@ -301,6 +311,7 @@ const ModalEditQuestion = memo(
       setStatus(openModal.data.status);
     }, [openModal]);
     const handleAddQuestion = async (e) => {
+      setLoading(true);
       e.preventDefault();
       try {
         if (question === "" || sourceId === "") {
@@ -325,6 +336,7 @@ const ModalEditQuestion = memo(
       } catch (err) {
         setToast("error", err.response.data.message);
       }
+      setLoading(false);
     };
     return (
       <Modal show={openModal.open} size="md" onClose={onCloseModal} popup>

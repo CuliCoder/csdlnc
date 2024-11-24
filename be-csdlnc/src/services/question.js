@@ -187,9 +187,9 @@ export const getAllQuestionsAndAnswers = () =>
       const result = await connection.query(`SELECT 
     q.id,question,
     GROUP_CONCAT( JSON_OBJECT('answer', answer, 'correct', correct)) AS answers
-FROM question q join answer a on q.id = a.id_question
-where q.status = 1
-GROUP BY id;`);
+FROM question q join answer a on q.id = a.id_question join source s on q.id_source = s.id
+where q.status = 1 and s.status = 1
+GROUP BY id`);
       const data = result[0].map((item) => {
         return {
           ...item,

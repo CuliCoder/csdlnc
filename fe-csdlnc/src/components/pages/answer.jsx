@@ -8,6 +8,7 @@ import { Spinner } from "flowbite-react";
 import { useMyContext } from "../../context/ContextAPI";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 const Answer = () => {
+  const { isLogin } = useMyContext();
   const [answers, setAnswers] = useState([]);
   const [search, setSearch] = useState("");
   const [option, setOption] = useState("id");
@@ -84,16 +85,19 @@ const Answer = () => {
         openModal={openModalAdd}
         onCloseModal={onCloseModalAdd}
         fetchAnswers={fetchAnswers}
+        setLoading={setLoading}
       />
-      <ModalEditQuestion
+      <ModalEditAnswer
         openModal={openModalEdit}
         onCloseModal={onCloseModalEdit}
         fetchAnswers={fetchAnswers}
+        setLoading={setLoading}
       />
       <ModalDeleteAnswer
         openModal={openModalDelete}
         onCloseModal={onCloseModalDelete}
         fetchAnswers={fetchAnswers}
+        setLoading={setLoading}
       />
       <div className="flex text-2xl font-bold mt-4 mb-10 !important">
         Danh sách các đáp án
@@ -154,7 +158,7 @@ const Answer = () => {
             </div>
           </div>
         </div>
-        <Button onClick={() => setOpenModalAdd(true)}>Thêm</Button>
+        {isLogin && <Button onClick={() => setOpenModalAdd(true)}>Thêm</Button>}
       </div>
       <div className="relative overflow-x-auto w-full mt-4 h-screen">
         {loading && (
@@ -187,6 +191,7 @@ const Answer = () => {
   );
 };
 const ListAnswer = React.memo(({ answers, openModalEdit, openModalDelete }) => {
+  const { isLogin } = useMyContext();
   return answers?.map((answer) => (
     <Table.Row
       key={answer.id}
@@ -201,235 +206,251 @@ const ListAnswer = React.memo(({ answers, openModalEdit, openModalDelete }) => {
         {answer.correct == "0" ? "" : <TiTick color="green" size={30} />}
       </Table.Cell>
       <Table.Cell className="flex">
-        <span
-          className="cursor-pointer"
-          onClick={() =>
-            openModalEdit({
-              open: true,
-              data: {
+        {isLogin && (
+          <span
+            className="cursor-pointer"
+            onClick={() =>
+              openModalEdit({
+                open: true,
+                data: {
+                  id: answer.id,
+                  answer: answer.answer,
+                  correct: answer.correct,
+                  questionId: answer.id_question,
+                },
+              })
+            }
+          >
+            <FaEdit color="red" />
+          </span>
+        )}
+        {isLogin && (
+          <span
+            className="cursor-pointer"
+            onClick={() =>
+              openModalDelete({
+                open: true,
                 id: answer.id,
-                answer: answer.answer,
-                correct: answer.correct,
                 questionId: answer.id_question,
-              },
-            })
-          }
-        >
-          <FaEdit color="red" />
-        </span>
-        <span
-          className="cursor-pointer"
-          onClick={() =>
-            openModalDelete({
-              open: true,
-              id: answer.id,
-              questionId: answer.id_question,
-            })
-          }
-        >
-          <MdDelete color="red" />
-        </span>
+              })
+            }
+          >
+            <MdDelete color="red" />
+          </span>
+        )}
       </Table.Cell>
     </Table.Row>
   ));
 });
-const ModalAddAnswer = memo(({ openModal, onCloseModal, fetchAnswers }) => {
-  const [answer, setAnswer] = useState("");
-  const [questionId, setQuestionId] = useState("");
-  const [correct, setCorrect] = useState("1");
-  const { setToast } = useMyContext();
-  const handleAddAnswer = async (e) => {
-    e.preventDefault();
-    try {
-      if (answer === "" || questionId === "") {
-        setToast("error", "Vui lòng nhập đầy đủ thông tin");
+const ModalAddAnswer = memo(
+  ({ openModal, onCloseModal, fetchAnswers, setLoading }) => {
+    const [answer, setAnswer] = useState("");
+    const [questionId, setQuestionId] = useState("");
+    const [correct, setCorrect] = useState("1");
+    const { setToast } = useMyContext();
+    const handleAddAnswer = async (e) => {
+      setLoading(true);
+      e.preventDefault();
+      try {
+        if (answer === "" || questionId === "") {
+          setToast("error", "Vui lòng nhập đầy đủ thông tin");
+          return;
+        }
+        if (isNaN(questionId)) {
+          setToast("error", "Id câu hỏi phải là số");
+          return;
+        }
+        const res = await axios.post("/api/answer/create", {
+          answer,
+          questionId,
+          correct,
+        });
+        if (res.data.error === 0) {
+          fetchAnswers();
+          onCloseModal();
+        }
+        setToast(res.data.error === 0 ? "success" : "error", res.data.message);
+      } catch (err) {
+        setToast("error", err.response.data.message);
+      }
+      setLoading(false);
+    };
+    useEffect(() => {
+      if (!openModal) {
+        setAnswer("");
+        setQuestionId("");
+      }
+    }, [openModal]);
+    return (
+      <Modal show={openModal} size="md" onClose={onCloseModal} popup>
+        <Modal.Header />
+        <Modal.Body>
+          <form className="space-y-6" onSubmit={handleAddAnswer}>
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white">
+              Thêm đáp án
+            </h3>
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="answer" value="Nhập đáp án " />
+              </div>
+              <TextInput
+                id="answer"
+                placeholder="Answer ..."
+                value={answer}
+                onChange={(event) => setAnswer(event.target.value)}
+                required
+              />
+              <div className="mb-2 block">
+                <Label htmlFor="questionId" value="Id câu hỏi" />
+              </div>
+              <TextInput
+                id="questionId"
+                placeholder="Id câu hỏi ..."
+                value={questionId}
+                onChange={(event) => setQuestionId(event.target.value)}
+                required
+              />
+              <div className="mb-2 block">
+                <Label htmlFor="correct" value="Correct" />
+              </div>
+              <Select
+                id="correct"
+                required
+                onChange={(e) => setCorrect(e.target.value)}
+                value={correct}
+              >
+                <option value={"1"}>Correct</option>
+                <option value={"0"}>Wrong</option>
+              </Select>
+            </div>
+            <div className="w-full flex justify-end mt-4">
+              <Button type="submit">Thêm</Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
+    );
+  }
+);
+const ModalEditAnswer = memo(
+  ({ openModal, onCloseModal, fetchAnswers, setLoading }) => {
+    const [answer, setAnswer] = useState(openModal.data.answer);
+    const [correct, setCorrect] = useState(openModal.data.correct);
+    const { setToast } = useMyContext();
+    useEffect(() => {
+      if (!openModal.open) {
+        setAnswer("");
+        setCorrect("");
         return;
       }
-      if (isNaN(questionId)) {
-        setToast("error", "Id câu hỏi phải là số");
-        return;
+      setAnswer(openModal.data.answer);
+      setCorrect(openModal.data.correct);
+    }, [openModal]);
+    const handleEditAnswer = async (e) => {
+      setLoading(true);
+      e.preventDefault();
+      try {
+        if (answer === "") {
+          setToast("error", "Vui lòng nhập đầy đủ thông tin");
+          return;
+        }
+        const res = await axios.put("/api/answer/edit", {
+          id: openModal.data.id,
+          answer,
+          correct,
+          questionId: openModal.data.questionId,
+        });
+        if (res.data.error === 0) {
+          fetchAnswers();
+          onCloseModal();
+        }
+        setToast(res.data.error === 0 ? "success" : "error", res.data.message);
+      } catch (err) {
+        setToast("error", err.response.data.message);
       }
-      const res = await axios.post("/api/answer/create", {
-        answer,
-        questionId,
-        correct,
-      });
-      if (res.data.error === 0) {
-        fetchAnswers();
-        onCloseModal();
+      setLoading(false);
+    };
+    return (
+      <Modal show={openModal.open} size="md" onClose={onCloseModal} popup>
+        <Modal.Header />
+        <Modal.Body>
+          <form className="space-y-6" onSubmit={handleEditAnswer}>
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white">
+              Sửa đáp án
+            </h3>
+            <div>
+              <div className="mb-2 block">
+                <Label htmlFor="answer" value="Nhập đáp án" />
+              </div>
+              <TextInput
+                id="answer"
+                placeholder="Answer ..."
+                value={answer}
+                onChange={(event) => setAnswer(event.target.value)}
+                required
+              />
+              <div className="mb-2 block">
+                <Label htmlFor="correct" value="Correct" />
+              </div>
+              <Select
+                id="correct"
+                required
+                onChange={(e) => setCorrect(e.target.value)}
+                value={correct}
+              >
+                <option value={"1"}>Correct</option>
+                <option value={"0"}>Wrong</option>
+              </Select>
+            </div>
+            <div className="w-full flex justify-end mt-4">
+              <Button type="submit">Sửa</Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
+    );
+  }
+);
+const ModalDeleteAnswer = memo(
+  ({ openModal, onCloseModal, fetchAnswers, setLoading }) => {
+    const { setToast } = useMyContext();
+    const handleDeleteAnswer = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.put(`/api/answer/delete/${openModal.id}`, {
+          questionId: openModal.questionId,
+        });
+        if (res.data.error === 0) {
+          fetchAnswers();
+          onCloseModal();
+        }
+        setToast(res.data.error === 0 ? "success" : "error", res.data.message);
+      } catch (error) {
+        setToast("error", error.response.data.message);
       }
-      setToast(res.data.error === 0 ? "success" : "error", res.data.message);
-    } catch (err) {
-      setToast("error", err.response.data.message);
-    }
-  };
-  useEffect(() => {
-    if (!openModal) {
-      setAnswer("");
-      setQuestionId("");
-    }
-  }, [openModal]);
-  return (
-    <Modal show={openModal} size="md" onClose={onCloseModal} popup>
-      <Modal.Header />
-      <Modal.Body>
-        <form className="space-y-6" onSubmit={handleAddAnswer}>
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white">
-            Thêm đáp án
-          </h3>
-          <div>
-            <div className="mb-2 block">
-              <Label htmlFor="question" value="Nhập đáp án " />
+      setLoading(false);
+    };
+    return (
+      <Modal show={openModal.open} size="md" onClose={onCloseModal} popup>
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
+            <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
+              {`Bạn có chắc chắn muốn xóa đáp án có id = ${openModal.id} không?`}
+            </h3>
+            <div className="flex justify-center gap-4">
+              <Button color="failure" onClick={handleDeleteAnswer}>
+                {"Có, tôi chắc chắn"}
+              </Button>
+              <Button color="gray" onClick={onCloseModal}>
+                Không
+              </Button>
             </div>
-            <TextInput
-              id="question"
-              placeholder="Answer ..."
-              value={answer}
-              onChange={(event) => setAnswer(event.target.value)}
-              required
-            />
-            <div className="mb-2 block">
-              <Label htmlFor="questionId" value="Id câu hỏi" />
-            </div>
-            <TextInput
-              id="questionId"
-              placeholder="Id câu hỏi ..."
-              value={questionId}
-              onChange={(event) => setQuestionId(event.target.value)}
-              required
-            />
-            <div className="mb-2 block">
-              <Label htmlFor="correct" value="Correct" />
-            </div>
-            <Select
-              id="correct"
-              required
-              onChange={(e) => setCorrect(e.target.value)}
-              value={correct}
-            >
-              <option value={"1"}>Correct</option>
-              <option value={"0"}>Wrong</option>
-            </Select>
           </div>
-          <div className="w-full flex justify-end mt-4">
-            <Button type="submit">Thêm</Button>
-          </div>
-        </form>
-      </Modal.Body>
-    </Modal>
-  );
-});
-const ModalEditQuestion = memo(({ openModal, onCloseModal, fetchAnswers }) => {
-  const [answer, setAnswer] = useState(openModal.data.answer);
-  const [correct, setCorrect] = useState(openModal.data.correct);
-  const { setToast } = useMyContext();
-  useEffect(() => {
-    if (!openModal.open) {
-      setAnswer("");
-      setCorrect("");
-      return;
-    }
-    setAnswer(openModal.data.answer);
-    setCorrect(openModal.data.correct);
-  }, [openModal]);
-  const handleAddQuestion = async (e) => {
-    e.preventDefault();
-    try {
-      if (answer === "") {
-        setToast("error", "Vui lòng nhập đầy đủ thông tin");
-        return;
-      }
-      const res = await axios.put("/api/answer/edit", {
-        id: openModal.data.id,
-        answer,
-        correct,
-        questionId: openModal.data.questionId,
-      });
-      if (res.data.error === 0) {
-        fetchAnswers();
-        onCloseModal();
-      }
-      setToast(res.data.error === 0 ? "success" : "error", res.data.message);
-    } catch (err) {
-      setToast("error", err.response.data.message);
-    }
-  };
-  return (
-    <Modal show={openModal.open} size="md" onClose={onCloseModal} popup>
-      <Modal.Header />
-      <Modal.Body>
-        <form className="space-y-6" onSubmit={handleAddQuestion}>
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white">
-            Sửa đáp án
-          </h3>
-          <div>
-            <div className="mb-2 block">
-              <Label htmlFor="question" value="Nhập đáp án" />
-            </div>
-            <TextInput
-              id="question"
-              placeholder="Answer ..."
-              value={answer}
-              onChange={(event) => setAnswer(event.target.value)}
-              required
-            />
-            <div className="mb-2 block">
-              <Label htmlFor="correct" value="Correct" />
-            </div>
-            <Select
-              id="correct"
-              required
-              onChange={(e) => setCorrect(e.target.value)}
-              value={correct}
-            >
-              <option value={"1"}>Correct</option>
-              <option value={"0"}>Wrong</option>
-            </Select>
-          </div>
-          <div className="w-full flex justify-end mt-4">
-            <Button type="submit">Sửa</Button>
-          </div>
-        </form>
-      </Modal.Body>
-    </Modal>
-  );
-});
-const ModalDeleteAnswer = memo(({ openModal, onCloseModal, fetchAnswers }) => {
-  const { setToast } = useMyContext();
-  const handleDeleteAnswer = async () => {
-    try {
-      const res = await axios.put(`/api/answer/delete/${openModal.id}`, {
-        questionId: openModal.questionId,
-      });
-      if (res.data.error === 0) {
-        fetchAnswers();
-        onCloseModal();
-      }
-      setToast(res.data.error === 0 ? "success" : "error", res.data.message);
-    } catch (error) {
-      setToast("error", error.response.data.message);
-    }
-  };
-  return (
-    <Modal show={openModal.open} size="md" onClose={onCloseModal} popup>
-      <Modal.Header />
-      <Modal.Body>
-        <div className="text-center">
-          <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
-          <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
-            {`Bạn có chắc chắn muốn xóa đáp án có id = ${openModal.id} không?`}
-          </h3>
-          <div className="flex justify-center gap-4">
-            <Button color="failure" onClick={handleDeleteAnswer}>
-              {"Có, tôi chắc chắn"}
-            </Button>
-            <Button color="gray" onClick={onCloseModal}>
-              Không
-            </Button>
-          </div>
-        </div>
-      </Modal.Body>
-    </Modal>
-  );
-});
+        </Modal.Body>
+      </Modal>
+    );
+  }
+);
 export default Answer;
