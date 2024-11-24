@@ -236,7 +236,6 @@ const ModalAddQuestion = memo(({ openModal, onCloseModal, fetchQuestions }) => {
       }
       setToast(res.data.error === 0 ? "success" : "error", res.data.message);
     } catch (err) {
-      console.log(err);
       setToast("error", err.response.data.message);
     }
   };
@@ -324,7 +323,6 @@ const ModalEditQuestion = memo(
         }
         setToast(res.data.error === 0 ? "success" : "error", res.data.message);
       } catch (err) {
-        console.log(err);
         setToast("error", err.response.data.message);
       }
     };

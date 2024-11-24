@@ -3,6 +3,7 @@ import * as questionController from "../controllers/question.js";
 import * as answerController from "../controllers/answer.js";
 import * as sourceController from "../controllers/source.js";
 import { authenticateToken } from "../middleware/JWT_action.js";
+import { logout } from "../controllers/auth.js";
 const routeAPI = express.Router();
 
 //question
@@ -31,13 +32,15 @@ routeAPI.get(
 routeAPI.get("/answer/content/:content", answerController.getAnswerByContent);
 routeAPI.get("/answer/correct/:correct", answerController.getAnswerByCorrect);
 //source
-routeAPI.get("/source", sourceController.getAllSource);
-routeAPI.get("/source/id/:id", sourceController.getSourceById);
-routeAPI.get("/source/link/:link", sourceController.getSourceByLink);
-routeAPI.get("/source/status/:status", sourceController.getSourceByStatus);
+routeAPI.get("/source/:searchDate/:date", sourceController.getAllSource);
+routeAPI.get("/source/id/:id/:searchDate/:date", sourceController.getSourceById);
+routeAPI.get("/source/link/:link/:searchDate/:date", sourceController.getSourceByLink);
+routeAPI.get("/source/status/:status/:searchDate/:date", sourceController.getSourceByStatus);
 
-//CRUD
 routeAPI.use(authenticateToken);
+//logout
+routeAPI.post('/logout', logout);
+//CRUD
 //question
 routeAPI.post("/question/create", questionController.createQuestion);
 routeAPI.put("/question/edit", questionController.editQuestion);
@@ -45,4 +48,7 @@ routeAPI.put("/question/edit", questionController.editQuestion);
 routeAPI.post("/answer/create", answerController.createAnswer);
 routeAPI.put("/answer/edit", answerController.editAnswer);
 routeAPI.put("/answer/delete/:id", answerController.deleteAnswer);
+//source
+routeAPI.post("/source/create", sourceController.createSource);
+routeAPI.put("/source/edit", sourceController.editSource);
 export default routeAPI;

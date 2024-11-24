@@ -66,3 +66,24 @@ export const login = async (req, res) => {
     return res.status(500).json(err);
   }
 };
+export const logout = async (req, res) => {
+  const id = req.data.id;
+  try {
+    const result = await authService.logout(id);
+    return res.clearCookie("token").status(200).json(result);
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json(err);
+  }
+};
+export const checkLogin = async (req, res) => {
+  const { id } = req.data;
+  if (!id) {
+    return res.status(200).json({
+      error: 1,
+    });
+  }
+  return res.status(200).json({
+    error: 0,
+  });
+};

@@ -35,3 +35,25 @@ export const login = (username, password) =>
       });
     }
   });
+export const logout = (id) =>
+  new Promise(async (resolve, reject) => {
+    try {
+      const result = await connection.execute(
+        "update user set token = null, publicKey = null where id = ?",
+        [id]
+      );
+      resolve({
+        error: result[0].affectedRows === 1 ? 0 : 1,
+        message:
+          result[0].affectedRows === 1
+            ? "Đăng xuất thành công"
+            : "Đăng xuất không thành công",
+      });
+    } catch (err) {
+      console.log(err);
+      reject({
+        error: 1,
+        message: "Đăng xuất không thành công",
+      });
+    }
+  });

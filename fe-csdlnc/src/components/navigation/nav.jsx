@@ -6,23 +6,30 @@ import {
   Label,
   Modal,
 } from "flowbite-react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, memo, useEffect } from "react";
 import { HiChartPie, HiSearch } from "react-icons/hi";
 import { FaQuestion } from "react-icons/fa";
 import { MdQuestionAnswer } from "react-icons/md";
 import { GrResources } from "react-icons/gr";
 import { FiLogIn, FiLogOut } from "react-icons/fi";
-
 import { useMyContext } from "../../context/ContextAPI";
+import { HiOutlineExclamationCircle } from "react-icons/hi";
 import axios from "../../config/configAxios";
-export default function Navigation() {
+const Navigation = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
-  const { setIsLogin, isLogin } = useMyContext();
+  const { isLogin } = useMyContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const handleClose = () => setIsOpen(false);
   const handleOpen = () => setIsOpen(true);
   const onCloseModal = useCallback(() => {
     setIsModalOpen(false);
+  }, []);
+  const onCloseLogoutModal = useCallback(() => {
+    setIsLogoutModalOpen(false);
+  }, []);
+  useEffect(() => {
+    
   }, []);
   return (
     <>
@@ -38,6 +45,10 @@ export default function Navigation() {
         onMouseEnter={handleOpen}
       />
       <ModalLogin openModal={isModalOpen} onCloseModal={onCloseModal} />
+      <ModalLogout
+        openModal={isLogoutModalOpen}
+        onCloseModal={onCloseLogoutModal}
+      />
       <Drawer open={isOpen} onClose={handleClose}>
         <Drawer.Header title="MENU" titleIcon={() => <></>} />
         <Drawer.Items>
@@ -74,7 +85,7 @@ export default function Navigation() {
                       icon={isLogin ? FiLogOut : FiLogIn}
                       onClick={() => {
                         if (isLogin) {
-                          setIsLogin(false);
+                          setIsLogoutModalOpen(true);
                         } else {
                           setIsModalOpen(true);
                         }
@@ -91,7 +102,7 @@ export default function Navigation() {
       </Drawer>
     </>
   );
-}
+});
 const ModalLogin = ({ openModal, onCloseModal }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -155,3 +166,40 @@ const ModalLogin = ({ openModal, onCloseModal }) => {
     </Modal>
   );
 };
+const ModalLogout = memo(({ openModal, onCloseModal }) => {
+  const { setToast, setIsLogin } = useMyContext();
+  const handleLogout = async () => {
+    try {
+      const res = await axios.post("/api/logout");
+      if (res.data.error === 0) {
+        setIsLogin(false);
+        onCloseModal();
+      }
+      setToast(res.data.error === 0 ? "success" : "error", res.data.message);
+    } catch (err) {
+      setToast("error", err.response.data.message);
+    }
+  };
+  return (
+    <Modal show={openModal} size="md" onClose={onCloseModal} popup>
+      <Modal.Header />
+      <Modal.Body>
+        <div className="text-center">
+          <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
+          <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
+            {`Bạn có muốn đăng xuất không?`}
+          </h3>
+          <div className="flex justify-center gap-4">
+            <Button color="failure" onClick={handleLogout}>
+              {"Có, tôi chắc chắn"}
+            </Button>
+            <Button color="gray" onClick={onCloseModal}>
+              Không
+            </Button>
+          </div>
+        </div>
+      </Modal.Body>
+    </Modal>
+  );
+});
+export default Navigation;
