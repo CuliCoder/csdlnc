@@ -6,9 +6,7 @@ export const authenticateToken = async (req, res, next) => {
     if (token == null) {
       return res.status(401).json({ code: 2, message: "Token is missing" });
     }
-    console.log(token);
     const getPublicKey = await get_publicKey(token);
-    console.log(getPublicKey);
     if (getPublicKey.error === 1) {
       return res.status(401).json({ code: 2, message: "Token is invalid" });
     }

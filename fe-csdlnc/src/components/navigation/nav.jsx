@@ -8,7 +8,7 @@ import {
 } from "flowbite-react";
 import { useCallback, useState, memo, useEffect } from "react";
 import { HiChartPie, HiSearch } from "react-icons/hi";
-import { FaQuestion } from "react-icons/fa";
+import { FaQuestion, FaUser } from "react-icons/fa";
 import { MdQuestionAnswer } from "react-icons/md";
 import { GrResources } from "react-icons/gr";
 import { FiLogIn, FiLogOut } from "react-icons/fi";
@@ -17,9 +17,10 @@ import { HiOutlineExclamationCircle } from "react-icons/hi";
 import axios from "../../config/configAxios";
 const Navigation = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
-  const { isLogin } = useMyContext();
+  const { isLogin, setIsLogin } = useMyContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [name, setName] = useState("");
   const handleClose = () => setIsOpen(false);
   const handleOpen = () => setIsOpen(true);
   const onCloseModal = useCallback(() => {
@@ -29,8 +30,21 @@ const Navigation = memo(() => {
     setIsLogoutModalOpen(false);
   }, []);
   useEffect(() => {
-    
-  }, []);
+    const checkLogin = async () => {
+      try {
+        const res = await axios.get("/auth/checkLogin");
+        setIsLogin(res.data.error === 0);
+        if (res.data.error === 0) {
+          setName(res.data.name);
+        }
+        console.log(res.data);
+      } catch (err) {
+        console.log(err);
+        setIsLogin(false);
+      }
+    };
+    checkLogin();
+  }, [isLogin]);
   return (
     <>
       <div
@@ -50,7 +64,10 @@ const Navigation = memo(() => {
         onCloseModal={onCloseLogoutModal}
       />
       <Drawer open={isOpen} onClose={handleClose}>
-        <Drawer.Header title="MENU" titleIcon={() => <></>} />
+        <Drawer.Header
+          title={isLogin ? `Hello ${name}` : ""}
+          titleIcon={() => <></>}
+        />
         <Drawer.Items>
           <Sidebar
             aria-label="Sidebar with multi-level dropdown example"
@@ -81,6 +98,11 @@ const Navigation = memo(() => {
                     <Sidebar.Item href="/source" icon={GrResources}>
                       Source
                     </Sidebar.Item>
+                    {isLogin && (
+                      <Sidebar.Item href="/user" icon={FaUser}>
+                        User List
+                      </Sidebar.Item>
+                    )}
                     <Sidebar.Item
                       icon={isLogin ? FiLogOut : FiLogIn}
                       onClick={() => {

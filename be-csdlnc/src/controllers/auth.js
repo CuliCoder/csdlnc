@@ -1,6 +1,5 @@
-import { error } from "console";
 import * as authService from "../services/auth.js";
-import { updateToken } from "../services/user.js";
+import { updateToken, get_publicKey } from "../services/user.js";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 export const login = async (req, res) => {
@@ -31,6 +30,7 @@ export const login = async (req, res) => {
     const token = jwt.sign(
       {
         id: user.id,
+        name: user.name,
       },
       private_key_token,
       {
@@ -77,13 +77,34 @@ export const logout = async (req, res) => {
   }
 };
 export const checkLogin = async (req, res) => {
-  const { id } = req.data;
-  if (!id) {
-    return res.status(200).json({
+  try {
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(200).json({
+        error: 1,
+      });
+    }
+    const result = await get_publicKey(token);
+    if (result.error === 1) {
+      return res.status(200).json({
+        error: 1, 
+      });
+    }
+    jwt.verify(token, result.publicKey, (err, data) => {
+      if (err) {
+        return res.status(200).json({
+          error: 1,
+        });
+      }
+      return res.status(200).json({
+        error: 0,
+        name: data.name
+      });
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
       error: 1,
     });
   }
-  return res.status(200).json({
-    error: 0,
-  });
 };

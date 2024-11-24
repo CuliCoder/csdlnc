@@ -119,3 +119,11 @@ export const editQuestion = async (req, res) => {
     return res.status(500).json(err);
   }
 };
+export const getAllQuestionsAndAnswers = async (req, res) => {
+  try {
+    const questions = await questionService.getAllQuestionsAndAnswers();
+    return res.status(200).json(questions);
+  } catch (err) {
+    return res.status(500).json(err);
+  }
+};

@@ -42,3 +42,14 @@ export const get_publicKey = (token) =>
       });
     }
   });
+export const getAllUser = ()=>{
+  return new Promise(async (resolve, reject) => {
+    try {
+      const [result] = await connection.query("select id,name from user");
+      resolve(result);
+    } catch (err) {
+      console.log(err);
+      reject(null);
+    }
+  });
+}

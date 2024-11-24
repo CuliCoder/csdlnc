@@ -181,3 +181,24 @@ export const editQuestion = (id, userId, sourceId, question, status) =>
       });
     }
   });
+export const getAllQuestionsAndAnswers = () =>
+  new Promise(async (resolve, reject) => {
+    try {
+      const result = await connection.query(`SELECT 
+    q.id,question,
+    GROUP_CONCAT( JSON_OBJECT('answer', answer, 'correct', correct)) AS answers
+FROM question q join answer a on q.id = a.id_question
+where q.status = 1
+GROUP BY id;`);
+      const data = result[0].map((item) => {
+        return {
+          ...item,
+          answers: JSON.parse(`[${item.answers}]`),
+        };
+      });
+      resolve(data);
+    } catch (err) {
+      console.log(err);
+      reject(null);
+    }
+  });

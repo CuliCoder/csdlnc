@@ -5,7 +5,7 @@ export const login = (username, password) =>
     try {
       // const [result] = await connection.query("call login(?)", [username]);
       const [result] = await connection.query(
-        "select id, password from user where username = ?",
+        "select id, name, password from user where username = ?",
         [username]
       );
       if (result.length === 0) {
@@ -26,6 +26,7 @@ export const login = (username, password) =>
         error: "0",
         message: "Đăng nhập thành công",
         id: result[0].id,
+        name: result[0].name,
       });
     } catch (err) {
       console.log(err);
