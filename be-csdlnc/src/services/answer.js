@@ -121,3 +121,88 @@ export const createAnswer = (answer, questionId, correct, userId) =>
       if (client) client.release();
     }
   });
+export const editAnswer = (id, answer, correct, userId, questionId) =>
+  new Promise(async (resolve, reject) => {
+    let client;
+    try {
+      client = await connection.getConnection();
+      await client.beginTransaction();
+      const result = await client.execute(
+        "update answer set answer = ?, correct = ? where id = ?",
+        [answer, correct, id]
+      );
+      if (result[0].affectedRows !== 1) {
+        resolve({
+          error: 1,
+          message: "Sửa câu trả lời thất bại",
+        });
+        return;
+      }
+      const [updateEditorId] = await client.execute(
+        "update question set id_user = ?, updated_at = now() where id = ?",
+        [userId, questionId]
+      );
+      if (updateEditorId.affectedRows !== 1) {
+        resolve({
+          error: 1,
+          message: "Sửa câu trả lời thất bại",
+        });
+        await client.rollback();
+        return;
+      }
+      await client.commit();
+      resolve({
+        error: 0,
+        message: "Sửa câu trả lời thành công",
+      });
+    } catch (err) {
+      console.log(err);
+      reject({
+        error: 1,
+        message: "Sửa câu trả lời thất bại",
+      });
+    } finally {
+      if (client) client.release();
+    }
+  });
+export const deleteAnswer = (id, userId, questionId) =>
+  new Promise(async (resolve, reject) => {
+    let client;
+    try {
+      client = await connection.getConnection();
+      await client.beginTransaction();
+      const result = await client.execute("delete from answer where id = ?", [
+        id,
+      ]);
+      if (result[0].affectedRows !== 1) {
+        resolve({
+          error: 1,
+          message: "Xóa câu trả lời thất bại",
+        });
+        return;
+      }
+      const [updateEditorId] = await client.execute(
+        "update question set id_user = ?, updated_at = now() where id = ?",
+        [userId, questionId]
+      );
+      if (updateEditorId.affectedRows !== 1) {
+        resolve({
+          error: 1,
+          message: "Xóa câu trả lời thất bại",
+        });
+        await client.rollback();
+        return;
+      }
+      await client.commit();
+      resolve({
+        error: 0,
+        message: "Xóa câu trả lời thành công",
+      });
+    } catch (err) {
+      console.log(err);
+      reject({
+        error: 1,
+        message: "Xóa câu trả lời thất bại",
+      });
+    }
+  });

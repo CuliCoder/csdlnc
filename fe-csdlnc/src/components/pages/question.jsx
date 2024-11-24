@@ -328,12 +328,6 @@ const ModalEditQuestion = memo(
         setToast("error", err.response.data.message);
       }
     };
-    useEffect(() => {
-      if (!openModal) {
-        setQuestion("");
-        setSourceId("");
-      }
-    }, [openModal]);
     return (
       <Modal show={openModal.open} size="md" onClose={onCloseModal} popup>
         <Modal.Header />

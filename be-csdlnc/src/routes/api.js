@@ -43,4 +43,6 @@ routeAPI.post("/question/create", questionController.createQuestion);
 routeAPI.put("/question/edit", questionController.editQuestion);
 //answer
 routeAPI.post("/answer/create", answerController.createAnswer);
+routeAPI.put("/answer/edit", answerController.editAnswer);
+routeAPI.put("/answer/delete/:id", answerController.deleteAnswer);
 export default routeAPI;

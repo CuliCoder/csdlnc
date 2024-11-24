@@ -6,6 +6,7 @@ import axios from "../../config/configAxios";
 import { TiTick } from "react-icons/ti";
 import { Spinner } from "flowbite-react";
 import { useMyContext } from "../../context/ContextAPI";
+import { HiOutlineExclamationCircle } from "react-icons/hi";
 const Answer = () => {
   const [answers, setAnswers] = useState([]);
   const [search, setSearch] = useState("");
@@ -14,6 +15,18 @@ const Answer = () => {
   const [loading, setLoading] = useState(false);
   const [fisrtLoad, setFirstLoad] = useState(true);
   const [openModalAdd, setOpenModalAdd] = useState(false);
+  const [openModalEdit, setOpenModalEdit] = useState({
+    open: false,
+    data: {
+      id: null,
+      answer: null,
+      correct: null,
+    },
+  });
+  const [openModalDelete, setOpenModalDelete] = useState({
+    open: false,
+    id: null,
+  });
   const fetchAnswers = useCallback(async () => {
     setLoading(true);
     try {
@@ -59,6 +72,12 @@ const Answer = () => {
   const onCloseModalAdd = useCallback(() => {
     setOpenModalAdd(false);
   }, []);
+  const onCloseModalEdit = useCallback(() => {
+    setOpenModalEdit({ ...openModalEdit, open: false });
+  }, []);
+  const onCloseModalDelete = useCallback(() => {
+    setOpenModalDelete({ ...openModalDelete, open: false });
+  }, []);
   return (
     <div className="flex flex-col items-center">
       <ModalAddAnswer
@@ -66,8 +85,18 @@ const Answer = () => {
         onCloseModal={onCloseModalAdd}
         fetchAnswers={fetchAnswers}
       />
+      <ModalEditQuestion
+        openModal={openModalEdit}
+        onCloseModal={onCloseModalEdit}
+        fetchAnswers={fetchAnswers}
+      />
+      <ModalDeleteAnswer
+        openModal={openModalDelete}
+        onCloseModal={onCloseModalDelete}
+        fetchAnswers={fetchAnswers}
+      />
       <div className="flex text-2xl font-bold mt-4 mb-10 !important">
-        Danh sách các câu trả lời
+        Danh sách các đáp án
       </div>
       <div className="w-full flex justify-end space-x-4 pr-4  ">
         <div className="flex">
@@ -146,14 +175,18 @@ const Answer = () => {
             <Table.HeadCell></Table.HeadCell>
           </Table.Head>
           <Table.Body className="divide-y">
-            <ListAnswer answers={answers} />
+            <ListAnswer
+              answers={answers}
+              openModalEdit={setOpenModalEdit}
+              openModalDelete={setOpenModalDelete}
+            />
           </Table.Body>
         </Table>
       </div>
     </div>
   );
 };
-const ListAnswer = React.memo(({ answers }) => {
+const ListAnswer = React.memo(({ answers, openModalEdit, openModalDelete }) => {
   return answers?.map((answer) => (
     <Table.Row
       key={answer.id}
@@ -168,10 +201,32 @@ const ListAnswer = React.memo(({ answers }) => {
         {answer.correct == "0" ? "" : <TiTick color="green" size={30} />}
       </Table.Cell>
       <Table.Cell className="flex">
-        <span className="cursor-pointer">
+        <span
+          className="cursor-pointer"
+          onClick={() =>
+            openModalEdit({
+              open: true,
+              data: {
+                id: answer.id,
+                answer: answer.answer,
+                correct: answer.correct,
+                questionId: answer.id_question,
+              },
+            })
+          }
+        >
           <FaEdit color="red" />
         </span>
-        <span className="cursor-pointer">
+        <span
+          className="cursor-pointer"
+          onClick={() =>
+            openModalDelete({
+              open: true,
+              id: answer.id,
+              questionId: answer.id_question,
+            })
+          }
+        >
           <MdDelete color="red" />
         </span>
       </Table.Cell>
@@ -197,7 +252,7 @@ const ModalAddAnswer = memo(({ openModal, onCloseModal, fetchAnswers }) => {
       const res = await axios.post("/api/answer/create", {
         answer,
         questionId,
-        correct
+        correct,
       });
       if (res.data.error === 0) {
         fetchAnswers();
@@ -205,7 +260,6 @@ const ModalAddAnswer = memo(({ openModal, onCloseModal, fetchAnswers }) => {
       }
       setToast(res.data.error === 0 ? "success" : "error", res.data.message);
     } catch (err) {
-      console.log(err);
       setToast("error", err.response.data.message);
     }
   };
@@ -229,7 +283,7 @@ const ModalAddAnswer = memo(({ openModal, onCloseModal, fetchAnswers }) => {
             </div>
             <TextInput
               id="question"
-              placeholder="Question ..."
+              placeholder="Answer ..."
               value={answer}
               onChange={(event) => setAnswer(event.target.value)}
               required
@@ -261,6 +315,119 @@ const ModalAddAnswer = memo(({ openModal, onCloseModal, fetchAnswers }) => {
             <Button type="submit">Thêm</Button>
           </div>
         </form>
+      </Modal.Body>
+    </Modal>
+  );
+});
+const ModalEditQuestion = memo(({ openModal, onCloseModal, fetchAnswers }) => {
+  const [answer, setAnswer] = useState(openModal.data.answer);
+  const [correct, setCorrect] = useState(openModal.data.correct);
+  const { setToast } = useMyContext();
+  useEffect(() => {
+    if (!openModal.open) {
+      setAnswer("");
+      setCorrect("");
+      return;
+    }
+    setAnswer(openModal.data.answer);
+    setCorrect(openModal.data.correct);
+  }, [openModal]);
+  const handleAddQuestion = async (e) => {
+    e.preventDefault();
+    try {
+      if (answer === "") {
+        setToast("error", "Vui lòng nhập đầy đủ thông tin");
+        return;
+      }
+      const res = await axios.put("/api/answer/edit", {
+        id: openModal.data.id,
+        answer,
+        correct,
+        questionId: openModal.data.questionId,
+      });
+      if (res.data.error === 0) {
+        fetchAnswers();
+        onCloseModal();
+      }
+      setToast(res.data.error === 0 ? "success" : "error", res.data.message);
+    } catch (err) {
+      setToast("error", err.response.data.message);
+    }
+  };
+  return (
+    <Modal show={openModal.open} size="md" onClose={onCloseModal} popup>
+      <Modal.Header />
+      <Modal.Body>
+        <form className="space-y-6" onSubmit={handleAddQuestion}>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">
+            Sửa đáp án
+          </h3>
+          <div>
+            <div className="mb-2 block">
+              <Label htmlFor="question" value="Nhập đáp án" />
+            </div>
+            <TextInput
+              id="question"
+              placeholder="Answer ..."
+              value={answer}
+              onChange={(event) => setAnswer(event.target.value)}
+              required
+            />
+            <div className="mb-2 block">
+              <Label htmlFor="correct" value="Correct" />
+            </div>
+            <Select
+              id="correct"
+              required
+              onChange={(e) => setCorrect(e.target.value)}
+              value={correct}
+            >
+              <option value={"1"}>Correct</option>
+              <option value={"0"}>Wrong</option>
+            </Select>
+          </div>
+          <div className="w-full flex justify-end mt-4">
+            <Button type="submit">Sửa</Button>
+          </div>
+        </form>
+      </Modal.Body>
+    </Modal>
+  );
+});
+const ModalDeleteAnswer = memo(({ openModal, onCloseModal, fetchAnswers }) => {
+  const { setToast } = useMyContext();
+  const handleDeleteAnswer = async () => {
+    try {
+      const res = await axios.put(`/api/answer/delete/${openModal.id}`, {
+        questionId: openModal.questionId,
+      });
+      if (res.data.error === 0) {
+        fetchAnswers();
+        onCloseModal();
+      }
+      setToast(res.data.error === 0 ? "success" : "error", res.data.message);
+    } catch (error) {
+      setToast("error", error.response.data.message);
+    }
+  };
+  return (
+    <Modal show={openModal.open} size="md" onClose={onCloseModal} popup>
+      <Modal.Header />
+      <Modal.Body>
+        <div className="text-center">
+          <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
+          <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
+            {`Bạn có chắc chắn muốn xóa đáp án có id = ${openModal.id} không?`}
+          </h3>
+          <div className="flex justify-center gap-4">
+            <Button color="failure" onClick={handleDeleteAnswer}>
+              {"Có, tôi chắc chắn"}
+            </Button>
+            <Button color="gray" onClick={onCloseModal}>
+              Không
+            </Button>
+          </div>
+        </div>
       </Modal.Body>
     </Modal>
   );
