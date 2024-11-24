@@ -1,7 +1,6 @@
 import React, { memo, useState, useEffect } from "react";
 import axios from "../../config/configAxios";
 import { Button } from "flowbite-react";
-import jsPDF from "jspdf";
 const Dashboard = memo(() => {
   const [questions, setQuestions] = useState([]);
   const [showTest, setShowTest] = useState(false);
